@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>転職の神殿</title>
+<style>
+:root{
+  --bg:#f5f4ef;--surface-1:#ecebe4;--surface-2:#ffffff;--border:rgba(0,0,0,0.12);
+  --text-primary:#2a2a28;--text-secondary:#5f5e5a;--text-muted:#8a8984;
+  --accent:#6F66D6;--accent-text:#ffffff;--radius:8px;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#1b1b19;--surface-1:#2b2b28;--surface-2:#232321;--border:rgba(255,255,255,0.14);
+    --text-primary:#ecebe6;--text-secondary:#b4b2a9;--text-muted:#88877f;
+    --accent:#8A82E6;--accent-text:#ffffff;
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text-primary);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",Meiryo,sans-serif;line-height:1.6}
+.wrap{max-width:480px;margin:0 auto;padding:16px}
+.card{background:var(--surface-2);border:0.5px solid var(--border);border-radius:14px;padding:18px 18px 20px}
+button{font-family:inherit;touch-action:manipulation;cursor:pointer}
+.op{display:block;width:100%;min-height:48px;text-align:left;padding:12px 14px;margin:10px 0;font-size:15px;line-height:1.5;color:var(--text-primary);background:var(--surface-2);border:1px solid var(--border);border-radius:10px;-webkit-tap-highlight-color:transparent}
+.op:active{background:var(--surface-1)}
+.primary{display:block;width:100%;padding:13px;margin-top:16px;font-size:16px;font-weight:600;color:var(--accent-text);background:var(--accent);border:none;border-radius:10px}
+.primary:active{opacity:.85}
+.ghost{background:none;border:none;color:var(--text-secondary);font-size:13px;padding:8px 0;margin-top:4px;text-decoration:underline}
+input[type=text]{width:100%;font-size:16px;padding:11px 12px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2);color:var(--text-primary);font-family:inherit}
+.bar{height:8px;background:var(--surface-1);border-radius:4px;overflow:hidden}
+.sec{font-size:13px;font-weight:600;color:var(--text-secondary);margin:22px 0 8px;display:flex;align-items:center;gap:6px}
+.sec::before{content:"";width:8px;height:8px;border-radius:2px;background:var(--accent);transform:rotate(45deg)}
+.row{display:grid;grid-template-columns:64px minmax(0,1fr) 28px;align-items:center;gap:8px;font-size:13px}
+.item{padding:10px 0;border-top:0.5px solid var(--border)}
+.nm{font-size:14px;font-weight:600;margin:0 0 2px}
+.ds{font-size:13px;color:var(--text-secondary);margin:0;line-height:1.65}
+.cell{background:var(--surface-1);border-radius:var(--radius);padding:10px 12px}
+.tg{font-size:11px;padding:1px 6px;border-radius:6px;margin-left:6px;font-weight:400}
+.note{font-size:11px;color:var(--text-muted);margin:12px 0 0;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+<div class="card">
+<p style="font-size:20px;font-weight:600;margin:0 0 8px;">転職の神殿</p>
+<p class="ds">24の問いに答えると、あなたの性格から職業、ステータス、使える呪文が決まります。6〜8分ほど。正解はありません。直感で選んでください。迷った時間も結果に反映されます。</p>
+<label for="nm" style="display:block;font-size:13px;color:var(--text-secondary);margin:16px 0 6px;">名前（任意）</label>
+<input id="nm" type="text" placeholder="たろう" autocomplete="off">
+<button id="go" class="primary">神殿に入る</button>
+<p class="note">回答は、このスマホの中だけで計算されます。どこにも送信・保存されません。</p>
+</div>
+</div>
+<script>
+const AX=['H','E','X','A','C','O'];
+const LB={H:'誠実さ',E:'繊細さ',X:'外向性',A:'寛容さ',C:'勤勉さ',O:'開放性'};
+const COL={H:'#1D9E75',E:'#D4537E',X:'#EF9F27',A:'#639922',C:'#378ADD',O:'#7F77DD'};
+const BAND={H:['損得に敏感で、駆け引きができる','状況に応じて正直さと実利を使い分ける','裏表がなく、ずるいことを嫌う'],E:['動じない。怖さや不安をあまり感じない','人並みに不安も感じるが、引きずらない','感情が豊かで、心配や共感を強く感じる'],X:['静かで、一人の時間を好む','場面によって人前にも一人にもなれる','社交的で、人前でも物怖じしない'],A:['率直で、納得できないことには反論する','基本は穏やかだが、譲れない線がある','寛容で、怒りを長く持たない'],C:['自由で、計画より勢いで動く','必要な時には計画的に動ける','几帳面で、最後まで手を抜かない'],O:['現実的で、慣れたやり方を好む','新しいものにも慣れたものにも適度に関心がある','好奇心が強く、型にはまらない発想をする']};
+const Q=[
+['店で会計をしたら、お釣りが1000円多く返ってきた。気づいたのは店を出た直後。','正しいことと手間を、本気で比べています。',[['すぐ戻って返す',{H:2}],['次にその店へ行った時に伝える',{H:1,C:-1}],['黙っておく。店の間違いだ',{H:-2}],['返したいが、戻って説明するのが気まずい',{H:1,X:-1,E:1}]]],
+['大勢が集まるパーティーに、一人で招かれた。','人と関わりたい気持ちと、疲れたくない気持ちの間にいます。',[['知らない人にも自分から話しかける',{X:2}],['知っている人を探して、その近くにいる',{X:-1,E:1}],['少し顔を出して早めに帰る',{X:-2}],['会場の雰囲気や料理をじっくり観察する',{O:1,X:-1}]]],
+['友人に頼まれたことを引き受けたが、締め切り前日になっても手をつけていない。','責任感と、自分のペースを守りたい気持ちがぶつかっています。',[['そもそもそうはならない。早めに終わらせている',{C:2}],['徹夜してでも間に合わせる',{C:1,H:1}],['正直に謝って、締め切りを延ばしてもらう',{H:1,C:-1}],['なんとかなると思って、当日やる',{C:-2,E:-1}]]],
+['夜中に、聞き慣れない物音が家の中でした。','怖さを認めることに、少し抵抗があるのかもしれません。',[['怖くて、しばらく動けない',{E:2}],['すぐに確かめに行く',{E:-2}],['誰かに連絡するか、一緒に確かめてもらう',{E:1,X:1}],['たぶん家鳴りだと思って寝る',{E:-1,C:-1}]]],
+['美術館で、何が描かれているのか分からない抽象画の前に立った。','分からないものとの付き合い方が、まだ自分の中で決まっていません。',[['時間をかけて、自分なりの意味を考える',{O:2}],['解説を読んで、作者の意図を知りたい',{O:1,C:1}],['よく分からないので次へ進む',{O:-2}],['一緒に来た人と「これ何だろう」と話す',{X:1,O:1}]]],
+['同僚に、あなたの手柄を自分のものとして報告された。','怒りと、関係を壊したくない気持ちが拮抗しています。',[['その場ではっきり訂正する',{A:-2,X:1}],['後で本人に直接伝える',{A:-1,H:1}],['腹は立つが、波風を立てずに流す',{A:1,E:1}],['いつかこちらも相手の手柄を利用する',{H:-2,A:-1}]]],
+['自分の部屋や机の状態に一番近いのは？','理想の自分と、実際の自分の差を感じています。',[['どこに何があるか決まっていて、整っている',{C:2}],['散らかっているが、どこに何があるかは分かる',{C:-1,O:1}],['時々一気に片付けるが、すぐ散らかる',{C:-1}],['物が少なく、散らかる余地がない',{C:1,O:-1}]]],
+['大事な発表の前日の夜は？','プレッシャーとの付き合い方に、自分でも確信がありません。',[['不安で何度も確認してしまう',{E:2,C:1}],['準備は済んでいるので普通に寝る',{C:1,E:-1}],['ほとんど準備していないが、なんとかなると思っている',{C:-2,E:-1}],['本番を想像して、少し楽しみになっている',{X:2,E:-1}]]],
+['高級ブランドの服や時計についての考えに近いのは？','欲しい気持ちと、それを欲しがる自分への抵抗が同居しています。',[['興味がない。高いだけで中身は変わらない',{H:2}],['品質が良いなら、高くても価値がある',{O:1}],['持っていると一目置かれるので欲しい',{H:-2,X:1}],['自分へのご褒美として、たまに欲しくなる',{H:-1,E:1}]]],
+['友人が、どう考えてもあなたは悪くない件で、あなたを責めてきた。','傷ついた気持ちと、相手を理解したい気持ちが両方あります。',[['落ち着いて、相手の言い分を最後まで聞く',{A:2}],['その場で反論する',{A:-2}],['傷ついて、しばらく引きずる',{E:2}],['距離を置いて、自然に離れる',{X:-1,A:-1}]]],
+['休日の予定がまったくない朝。','自由な時間をどう使うかに、まだ迷いがあります。',[['前もって予定を立てておきたかったと思う',{C:2}],['気の向くまま出かけて、行き先はその場で決める',{C:-1,O:1,X:1}],['誰かに連絡して、会う約束をする',{X:2}],['家で一人、好きなことに没頭する',{X:-2,O:1}]]],
+['「昔から続くやり方は守るべきことが多い」という意見について。','変化を望む気持ちと、変わらないものへの安心の間で揺れています。',[['その通りだと思う',{O:-2}],['時代に合わせて変えるべきことの方が多い',{O:2}],['中身によるので、一つずつ考えたい',{O:1,C:1}],['あまり考えたことがない',{O:-1}]]],
+['試験やゲームで、バレずに不正ができる方法を見つけた。','ルールと損得の間で、正直に迷える人です。',[['使わない。自分の力でやりたい',{H:2}],['使わないが、仕組みとしては面白いと思う',{H:1,O:1}],['周りもやっているなら使う',{H:-1}],['迷わず使う',{H:-2}]]],
+['誰かに心配事を打ち明けたくなるのは、どんな時？','人に頼ることへの抵抗と、頼りたい気持ちが同居しています。',[['ほぼいつも。話すと楽になる',{E:2,X:1}],['よほど深刻な時だけ',{E:-1}],['誰にも打ち明けない。自分で解決する',{E:-2,X:-1}],['打ち明けるより、人の相談に乗ることの方が多い',{A:1,E:-1}]]],
+['グループで旅行の行き先を決める時。','自分の希望を通したい気持ちと、場の和を守りたい気持ちがぶつかっています。',[['自分の行きたい場所を強く推す',{X:1,A:-2}],['みんなの希望を聞いて、まとめ役になる',{A:1,X:1,C:1}],['正直どこでもいい。決まった所に行く',{A:2,X:-1}],['下調べをして、根拠つきで提案する',{C:2}]]],
+['映画や小説で、登場人物がつらい目にあう場面では？','感情に深く入り込むことを、どこかで警戒しています。',[['感情移入して、泣きそうになる',{E:2}],['心は動くが、冷静に見ている',{E:-1}],['物語の構成や演出の方が気になる',{O:1,E:-1}],['つらい話は、そもそも見たくない',{E:1,O:-1}]]],
+['一緒に作業している人のミスで、やり直しになった。','相手を責めたくない気持ちと、苛立ちが両方あります。',[['誰にでもあることなので気にしない',{A:2}],['気にしないふりをするが、内心いらいらしている',{A:-1,H:-1}],['次から起きないよう、やり方を一緒に考える',{C:1,A:1}],['はっきり注意する',{A:-2,X:1}]]],
+['初対面の人と二人きりになった。','打ち解けたい気持ちと、踏み込むことへのためらいがあります。',[['自分から話題を振る',{X:2}],['相手が話しかけてくれるのを待つ',{X:-2}],['相手を観察して、どんな人か想像する',{O:1,X:-1}],['気まずくて落ち着かない',{E:1,X:-1}]]],
+['仕事や勉強で、誰にも見られない部分の作業は？','こだわりたい気持ちと、効率を求める気持ちが拮抗しています。',[['見られなくても丁寧にやる',{C:1,H:1}],['結果に影響しない部分は省く',{C:-1}],['見られないなら最低限にする',{C:-2,H:-1}],['むしろ、そこに一番こだわってしまう',{C:2}]]],
+['上の立場の人から、明らかに間違った指示が出た。','正しさを通すことと、立場を守ることの間で迷っています。',[['理由を添えて、意見を伝える',{A:-1,X:1,H:1}],['指示どおりにやる',{A:1,O:-1}],['表面上は従い、自分のやり方で進める',{H:-1}],['気に入られる好機だと思い、喜んで従う',{H:-2,A:1}]]],
+['「自分は人より優れている部分が多い」と思う？','自分への評価が、まだ一つに定まっていません。',[['思う',{H:-1,X:1}],['分野によっては思う',{X:1}],['思わない。みんな同じくらい',{H:2}],['むしろ劣っていると思うことが多い',{X:-2,E:1}]]],
+['興味のない分野の本を、たまたま手に取った。','好奇心と、時間を有効に使いたい気持ちがぶつかっています。',[['意外と面白くて読み込んでしまう',{O:2}],['少し読んで、やはり戻す',{O:-1}],['読まない。時間がもったいない',{O:-2,C:1}],['詳しい人に話を聞いてみたくなる',{O:1,X:1}]]],
+['長年の友人に、お金を貸してほしいと頼まれた。','友情と、自分を守る判断の間で迷っています。',[['理由を聞かずに貸す',{A:2}],['理由と返済の予定を確認してから貸す',{C:2}],['断る',{A:-2}],['不安だが、断れずに貸す',{E:2,A:1}]]],
+['人生で一番大事にしたいものに近いのは？','何を軸に生きるか、今まさに考えている最中です。',[['誠実に生きること',{H:2}],['大切な人との穏やかな日々',{A:1,E:1}],['新しい経験と発見',{O:2}],['目標を達成すること',{C:2}],['人と楽しく過ごすこと',{X:2}]]]
+];
+const AJ={H:['清廉なる','したたかな'],E:['心優しき','動じぬ'],X:['陽気な','物静かな'],A:['穏やかな','歯に衣着せぬ'],C:['几帳面な','自由奔放な'],O:['夢見る','現実を見据える']};
+const JOBS=[
+['勇者',{H:75,E:35,X:70,A:60,C:70,O:60},'誠実さと行動力を併せ持ち、人の先頭に立って困難に向かう。'],
+['戦士',{H:55,E:25,X:60,A:40,C:60,O:35},'恐れを知らず、思ったことをまっすぐ行動に移す。'],
+['武闘家',{H:55,E:30,X:40,A:40,C:80,O:40},'自分を律し、一人で黙々と鍛え続ける。'],
+['魔法使い',{H:50,E:50,X:25,A:45,C:50,O:85},'一人の時間で考えを深め、独自の発想を生み出す。'],
+['僧侶',{H:80,E:65,X:45,A:85,C:60,O:45},'人の痛みに寄り添い、裏表なく人を支える。'],
+['賢者',{H:70,E:40,X:40,A:65,C:70,O:85},'好奇心と几帳面さを併せ持ち、知識を確実に身につける。'],
+['商人',{H:35,E:45,X:70,A:55,C:70,O:45},'人付き合いがうまく、損得を冷静に見極める。'],
+['遊び人',{H:50,E:40,X:85,A:60,C:15,O:70},'計画に縛られず、どこにいても場を楽しくする。'],
+['盗賊',{H:20,E:30,X:55,A:40,C:35,O:60},'機転がきき、ルールの隙間をうまく突く。'],
+['踊り子',{H:50,E:60,X:85,A:65,C:35,O:70},'感情を素直に表に出し、人を惹きつける。'],
+['吟遊詩人',{H:60,E:75,X:50,A:70,C:40,O:80},'感受性が豊かで、美しいものや物語に心を動かされる。'],
+['魔物使い',{H:60,E:55,X:35,A:75,C:45,O:70},'型にはまらず、誰とでも分け隔てなく打ち解ける。'],
+['パラディン',{H:80,E:30,X:50,A:70,C:80,O:40},'揺るがない誠実さで、仲間を最後まで守り抜く。'],
+['魔法戦士',{H:55,E:35,X:60,A:45,C:55,O:75},'発想と行動力を併せ持ち、状況に応じて戦い方を変える。'],
+['レンジャー',{H:55,E:30,X:30,A:50,C:60,O:65},'群れずに自分の判断で動き、未知の場所を切り開く。'],
+['スーパースター',{H:35,E:50,X:95,A:50,C:45,O:75},'人前で輝き、新しいことで人を驚かせる。'],
+['バトルマスター',{H:45,E:20,X:65,A:25,C:55,O:40},'衝突を恐れず、正面から勝負を挑む。']
+];
+const STATS=[
+['HP',s=>40+2.0*s.X+1.3*(100-s.E),370],
+['MP',s=>20+1.8*(100-s.X)+1.7*s.O,370],
+['ちから',s=>5+1.5*(100-s.A)+1.0*s.X,255],
+['みのまもり',s=>5+1.0*(100-s.E)+0.8*s.A+0.7*s.C,255],
+['すばやさ',s=>5+1.3*(100-s.C)+1.2*s.X,255],
+['かしこさ',s=>5+1.5*s.O+1.0*s.C,255],
+['うんのよさ',s=>5+1.4*s.H+1.1*s.A,255],
+['みりょく',s=>5+1.0*s.X+0.8*s.O+0.7*s.H,255]
+];
+const DQS={H:[['かばう','仲間への攻撃を、身を挺して引き受ける。'],['ぬすむ','戦いのどさくさに、相手の持ち物をいただく。']],E:[['みかわしきゃく','危険の気配をいち早く察知し、攻撃をかわしやすくなる。'],['におうだち','仲間の前に立ちはだかり、すべての攻撃を一人で受け止める。']],X:[['はやぶさぎり','目にも止まらぬ速さで、二回続けて斬りかかる。'],['めいそう','静かに心を落ち着け、自分の傷を大きく回復する。']],A:[['ハッスルダンス','楽しげな踊りで、仲間全員の傷を回復する。'],['まじんぎり','当たれば大ダメージ、外れれば空振りの、一か八かの一撃。']],C:[['ためる','力をためて、次の攻撃を確実に強くする。'],['ばくれつけん','狙いを定めず、手当たり次第に連続で殴りかかる。']],O:[['ものまね','相手の技を見て、そのまま自分のものにする。'],['せいけんづき','基本に忠実な、まっすぐで重い一撃。']]};
+const DQM={H:[['ニフラム','邪な心を持つ敵を、光とともに消し去る。'],['マヌーサ','幻を見せて、相手の攻撃を空振りさせる。']],E:[['ホイミ','仲間の小さな傷にすぐ気づき、そっと癒す。'],['マホカンタ','相手の呪文を、そのまま跳ね返す。']],X:[['ピオリム','仲間全員の素早さを上げ、勢いをつける。'],['リレミト','どんなに入り組んだ場所からでも、一瞬で外へ脱出する。']],A:[['ベホマズン','仲間全員の傷を、完全に回復する。'],['ルカニ','相手の守備力を下げ、弱点をあらわにする。']],C:[['スクルト','仲間全員の守備力を上げる。'],['パルプンテ','何が起きるかは、唱えた本人にも分からない。']],O:[['イオナズン','敵全体を、巨大な爆発で攻撃する。'],['メラ','小さな火の玉で、確実にダメージを与える。']]};
+const SP={H:[['真実の言葉','呪文',3,'嘘やごまかしを見抜き、話し合いを正しい方向へ戻す。'],['交渉術','特技',0,'相手の欲しいものを見抜き、有利な条件を引き出す。']],E:[['共感の祈り','呪文',4,'仲間の心の痛みを感じ取り、気持ちを回復させる。'],['不動の構え','特技',0,'脅しや混乱を受けても、判断が一切ぶれない。']],X:[['鼓舞の雄叫び','特技',2,'仲間全員のやる気を引き上げる。'],['静寂の時間','特技',0,'一人の時間を取ることで、MPを大きく回復する。']],A:[['和解の光','呪文',6,'対立をおさめ、仲間同士の関係を修復する。'],['直言の一撃','特技',3,'誰も言えなかった問題点を指摘し、議論の流れを変える。']],C:[['周到な準備','呪文',5,'事前の段取りで、戦闘中の全員のみのまもりを上げる。'],['臨機応変','特技',2,'予想外の事態でも、その場で最善の行動を選ぶ。']],O:[['閃きの呪文','呪文',8,'誰も思いつかなかった解決策を生み出す。'],['定石','特技',1,'実績のある方法で、確実に成果を出す。']]};
+const SPX=[
+['構想具現','呪文',15,'頭の中にある設計を、そのまま現実の形にする。',s=>s.O>=65&&s.C>=65],
+['宴の大回復','呪文',12,'人が集まる場を作り、仲間全員の心を回復させる。',s=>s.X>=62&&s.A>=62],
+['誓約の盾','呪文',10,'交わした約束を必ず守り、仲間の信頼を一度も失わない。',s=>s.H>=65&&s.C>=62],
+['心の聴診','呪文',7,'相手が口にしない本音を、言葉になる前に感じ取る。',s=>s.E>=62&&s.X<=40],
+['単騎突破','特技',6,'周りの反対を気にせず、一人で状況を打開する。',s=>s.A<=38&&s.E<=40],
+['気まぐれの奇跡','呪文','?','何が起きるか本人にも分からないが、なぜか場がうまく収まる。',s=>s.C<=35&&s.X>=60]
+];
+const INS={H:['損をしても筋を通す人です。ずるさを嫌い、自分を大きく見せることに興味がありません。','自分の利益を冷静に計算できる人です。人を動かす方法をよく分かっています。'],E:['感情の振れ幅が大きく、人の気持ちに敏感です。不安を感じやすいぶん、危険に気づくのも早い人です。','多少のことでは動じません。危機の場面で落ち着いていられる一方、人からは淡白に見られることがあります。'],X:['人と関わることで元気になる人です。自分の意見を人前で言うことを苦にしません。','一人の時間で回復する人です。大勢の中より、少人数や一対一で力を発揮します。'],A:['人の失敗を許し、衝突を避けて穏やかに収める人です。','納得できないことには率直に異を唱えます。妥協しないぶん、議論から逃げない人です。'],C:['計画を立て、手を抜かずにやり遂げる人です。周りからの信頼はこの几帳面さから生まれています。','その場の判断で柔軟に動く人です。細かい段取りより、勢いと臨機応変さが持ち味です。'],O:['新しい考えや美しいものに強く惹かれます。常識を疑い、自分なりの見方を作る人です。','実績のある方法と現実的な判断を大事にする人です。流行や抽象論に振り回されず、判断がぶれません。']};
+const CT={H:'正直でいたい場面と、実利を取る場面がはっきり分かれている。',E:'動じない時と、強く不安を感じる時の差が大きい。',X:'人の中にいたい時と、一人になりたい時が交互に来る。',A:'人に優しくしたい気持ちと、言うべきことは言いたい気持ちの両方を持っている。',C:'きちんとしたい分野と、まったく気にしない分野がはっきりしている。',O:'新しいものに惹かれる一方で、慣れたものへの安心も手放さない。'};
+const TR=[
+['調和の人',5,'どの性質にも極端な偏りがなく、場面に応じて振る舞いを変えられる。',s=>AX.every(a=>s[a]>=38&&s[a]<=62)],
+['信頼の柱',4,'約束を守り、見えない所でも手を抜かない。周りから最も頼られる。',s=>s.H>=65&&s.C>=65],
+['人望の人',4,'人が自然に集まり、その場が和やかになる。',s=>s.X>=65&&s.A>=65],
+['静かな探究者',4,'一人で深く考え、自分だけの見方を持っている。',s=>s.X<=38&&s.O>=65],
+['交渉上手',4,'人の動かし方をよく分かっていて、自分に有利な状況を作れる。',s=>s.H<=38&&s.X>=60],
+['内に秘めた感受性',4,'表には出さないが、心の中では多くのことを感じている。',s=>s.E>=65&&s.X<=38],
+['妥協なき仕事人',4,'自分にも他人にも求める水準が高く、指摘も率直。',s=>s.C>=65&&s.A<=40],
+['議論の火付け役',3,'物怖じせずに意見をぶつけ、話を前に進める。',s=>s.X>=65&&s.A<=38],
+['共感の人',3,'人のつらさに敏感で、放っておけない。',s=>s.E>=65&&s.A>=60],
+['冷静な判断者',3,'情に流されず、必要なら厳しい判断も下せる。',s=>s.E<=38&&s.A<=42],
+['心配性の完璧主義',3,'失敗を恐れるぶん、準備は誰よりも周到。',s=>s.C>=65&&s.E>=62],
+['その場の主役',3,'計画より勢いで動き、場を盛り上げる。',s=>s.C<=38&&s.X>=62],
+['控えめな正直者',3,'目立たないが、裏表がまったくない。',s=>s.H>=65&&s.X<=40],
+['伝統の守り手',3,'実績のある方法を、確実に積み重ねる。',s=>s.O<=38&&s.C>=60],
+['怖いもの知らず',3,'人前でも危機の場面でも動じない。',s=>s.E<=35&&s.X>=60],
+['自由人',3,'決まりや予定に縛られず、気の向く方へ進む。',s=>s.C<=35&&s.O>=60]
+];
+const app=document.getElementById('app');
+const START=app.innerHTML;
+let st={};
+const esc=t=>t.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function shuf(a){for(let k=a.length-1;k>0;k--){const j=Math.floor(Math.random()*(k+1));[a[k],a[j]]=[a[j],a[k]];}return a;}
+function toTop(){window.scrollTo(0,0);}
+function bindStart(){document.getElementById('go').onclick=start;}
+function start(){
+const v=document.getElementById('nm').value.trim();
+st={i:0,ans:new Array(Q.length).fill(-1),tm:new Array(Q.length).fill(0),ord:Q.map(q=>shuf(q[2].map((_,k)=>k))),name:v||'名もなき旅人',t0:0};
+showQ();
+}
+function showQ(){
+const q=Q[st.i],n=Q.length,pc=Math.round(st.i/n*100);
+let h='<div class="card"><div style="display:flex;justify-content:space-between;font-size:13px;color:var(--text-secondary);"><span>第'+(st.i+1)+'の問い / '+n+'</span><span>'+pc+'%</span></div><div class="bar" style="margin:6px 0 16px;"><div style="width:'+pc+'%;height:100%;background:var(--accent);"></div></div><p style="font-size:17px;line-height:1.7;margin:0 0 6px;">'+q[0]+'</p>';
+st.ord[st.i].forEach(k=>{h+='<button class="op" data-k="'+k+'">'+q[2][k][0]+'</button>';});
+if(st.i>0)h+='<button id="bk" class="ghost">前の問いに戻る</button>';
+h+='</div>';
+app.innerHTML=h;
+app.querySelectorAll('.op').forEach(b=>{b.onclick=()=>pick(+b.dataset.k);});
+const bk=document.getElementById('bk');if(bk)bk.onclick=back;
+toTop();
+st.t0=performance.now();
+}
+function pick(k){st.tm[st.i]+=performance.now()-st.t0;st.ans[st.i]=k;st.i++;if(st.i>=Q.length)result();else showQ();}
+function back(){st.tm[st.i]+=performance.now()-st.t0;st.i--;showQ();}
+function result(){
+const sum={},ex={},va={},pos={},neg={};
+AX.forEach(a=>{sum[a]=0;ex[a]=0;va[a]=0;pos[a]=0;neg[a]=0;});
+Q.forEach((q,qi)=>{AX.forEach(a=>{
+const ws=q[2].map(o=>o[1][a]||0),m=ws.reduce((x,y)=>x+y,0)/ws.length;
+ex[a]+=m;va[a]+=ws.reduce((x,y)=>x+(y-m)*(y-m),0)/ws.length;
+const w=q[2][st.ans[qi]][1][a]||0;sum[a]+=w;if(w>0)pos[a]+=w;if(w<0)neg[a]-=w;});});
+const s={};
+AX.forEach(a=>{const z=va[a]>0?(sum[a]-ex[a])/Math.sqrt(va[a]):0;s[a]=Math.max(2,Math.min(99,Math.round(50+16*z)));});
+const rk=AX.slice().sort((x,y)=>Math.abs(s[y]-50)-Math.abs(s[x]-50));
+const p=a=>s[a]>=50?0:1;
+const jb=JOBS.map(j=>{const d=Math.sqrt(AX.reduce((t,a)=>t+(s[a]-j[1][a])**2,0));return {n:j[0],d:j[2],m:Math.max(1,Math.min(99,Math.round(100-d*0.9)))};}).sort((x,y)=>y.m-x.m);
+const job=jb[0];
+const ttl=AJ[rk[0]][p(rk[0])];
+const md=AX.reduce((t,a)=>t+Math.abs(s[a]-50),0)/AX.length;
+const lv=Math.max(1,Math.min(99,Math.round(md*2.4+15)));
+const sv=STATS.map(x=>Math.round(x[1](s)));
+const phys=sv[0]>=sv[1];
+const dq=(phys?DQS:DQM)[rk[0]][p(rk[0])];
+let sp=[{n:dq[0],t:phys?'特技':'呪文',c:null,d:dq[1],tag:'本家'}];
+SPX.filter(x=>x[4](s)).slice(0,2).forEach(x=>sp.push({n:x[0],t:x[1],c:x[2],d:x[3],tag:'固有'}));
+for(const a of rk.slice(1)){if(sp.length>=4)break;const x=SP[a][p(a)];sp.push({n:x[0],t:x[1],c:x[2],d:x[3],tag:''});}
+let tr=TR.filter(t=>t[3](s)).slice(0,2).map(t=>({n:t[0],r:t[1],d:t[2]}));
+const ca=AX.filter(a=>pos[a]>=2&&neg[a]>=2).sort((x,y)=>Math.min(pos[y],neg[y])-Math.min(pos[x],neg[x]));
+if(ca.length)tr.push({n:'揺らぎ：'+LB[ca[0]],r:3,d:CT[ca[0]]});
+const tms=st.tm.slice().sort((x,y)=>x-y),med=tms[Math.floor(tms.length/2)];
+let hi=0;st.tm.forEach((t,k)=>{if(t>st.tm[hi])hi=k;});
+const hes=(st.tm[hi]>=1.6*med&&st.tm[hi]>5000)?hi:-1;
+let ins=INS[rk[0]][p(rk[0])]+INS[rk[1]][p(rk[1])];
+if(ca.length)ins+='ただ、'+CT[ca[0]];
+let h='<div class="card"><div style="display:flex;align-items:center;gap:12px;"><div style="width:52px;height:52px;border-radius:50%;background:#EEEDFE;color:#3C3489;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:17px;flex-shrink:0;">'+esc(st.name.slice(0,1))+'</div><div style="flex:1;min-width:0;"><p style="font-size:18px;font-weight:600;margin:0;">'+esc(st.name)+'</p><p style="font-size:13px;color:var(--text-secondary);margin:0;">'+ttl+job.n+'</p></div><div style="text-align:right;"><p style="font-size:11px;color:var(--text-muted);margin:0;">Lv.</p><p style="font-size:26px;font-weight:600;margin:0;line-height:1;">'+lv+'</p></div></div>';
+h+='<div class="cell" style="margin-top:14px;"><p style="font-size:13px;margin:0 0 2px;"><span style="font-weight:600;">職業：'+job.n+'</span><span style="color:var(--text-muted);margin-left:8px;">適性 '+job.m+'%</span></p><p class="ds">'+job.d+'</p></div>';
+h+='<p class="ds" style="margin-top:14px;color:var(--text-primary);">'+ins+'</p>';
+h+='<div class="sec">ステータス</div><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;">';
+STATS.forEach((x,k)=>{const v=sv[k];h+='<div class="cell"><div style="display:flex;justify-content:space-between;font-size:13px;"><span>'+x[0]+'</span><span style="font-weight:600;">'+v+'</span></div><div class="bar" style="margin:6px 0 0;background:var(--surface-2);"><div style="width:'+Math.min(100,v/x[2]*100)+'%;height:100%;background:var(--accent);"></div></div></div>';});
+h+='</div>';
+h+='<div class="sec">呪文・特技</div>';
+sp.forEach(x=>{let tg='';if(x.tag==='本家')tg='<span class="tg" style="background:#FAEEDA;color:#633806;">本家</span>';if(x.tag==='固有')tg='<span class="tg" style="background:#EEEDFE;color:#3C3489;">固有</span>';const cost=x.c===null?'':('　'+(x.c===0?'消費なし':'MP '+x.c));h+='<div class="item"><p class="nm">'+x.n+'<span style="font-size:12px;color:var(--text-muted);font-weight:400;margin-left:8px;">'+x.t+cost+'</span>'+tg+'</p><p class="ds">'+x.d+'</p></div>';});
+h+='<div class="sec">性格パラメータ</div>';
+AX.forEach(a=>{const b=s[a]<38?0:(s[a]>62?2:1);h+='<div style="margin:0 0 12px;"><div class="row"><span>'+LB[a]+'</span><div class="bar"><div style="width:'+s[a]+'%;height:100%;background:'+COL[a]+';"></div></div><span style="text-align:right;font-weight:600;">'+s[a]+'</span></div><p class="ds" style="font-size:12px;margin:3px 0 0 72px;">'+BAND[a][b]+'</p></div>';});
+if(tr.length){h+='<div class="sec">特性</div>';tr.forEach(t=>{h+='<div class="item"><p class="nm">'+t.n+'<span style="font-size:12px;color:#BA7517;margin-left:8px;font-weight:400;">'+'★'.repeat(t.r)+'☆'.repeat(5-t.r)+'</span></p><p class="ds">'+t.d+'</p></div>';});}
+h+='<div class="sec">迷いの在り処</div>';
+if(hes>=0)h+='<div class="item"><p class="nm">第'+(hes+1)+'の問い　'+Math.round(st.tm[hes]/1000)+'秒</p><p class="ds" style="margin-bottom:6px;">'+Q[hes][0]+'</p><p class="ds" style="color:var(--text-primary);">'+Q[hes][1]+'</p></div>';
+else h+='<div class="item"><p class="ds" style="color:var(--text-primary);">大きく迷った問いはありませんでした。判断の基準が、自分の中ではっきりしている人です。</p></div>';
+h+='<div class="sec">転職候補</div>';
+jb.slice(1,3).forEach(j=>{h+='<div class="item" style="display:flex;justify-content:space-between;gap:8px;"><span style="font-size:14px;">'+j.n+'</span><span style="font-size:13px;color:var(--text-muted);">適性 '+j.m+'%</span></div>';});
+h+='<button id="rs" class="primary">次の旅人を迎える</button>';
+h+='<p class="note">性格パラメータは心理学のHEXACOモデルを土台にしています。問いは独自に作ったもので、検証された心理検査ではありません。</p></div>';
+app.innerHTML=h;
+toTop();
+document.getElementById('rs').onclick=()=>{app.innerHTML=START;bindStart();toTop();};
+}
+bindStart();
+</script>
+</body>
+</html>
